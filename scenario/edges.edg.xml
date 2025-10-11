@@ -1,0 +1,10 @@
+<edges>
+  <!-- Road A: North to South -->
+  <edge id="north_in" from="n2" to="n1" numLanes="1" speed="13.9"/>
+  <edge id="south_out" from="n1" to="n3" numLanes="1" speed="13.9"/>
+
+  <!-- Road B: East to West -->
+  <edge id="east_in" from="n4" to="n1" numLanes="1" speed="13.9"/>
+  <edge id="west_out" from="n1" to="n5" numLanes="1" speed="13.9"/>
+</edges>
+
