@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!-- generated on 2025-10-05 01:12:34 by Eclipse SUMO netconvert Version 1.24.0
+<!-- generated on 2025-10-10 23:36:10 by Eclipse SUMO netconvert Version 1.24.0
 <netconvertConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/netconvertConfiguration.xsd">
 
     <input>
@@ -12,6 +12,11 @@
     <output>
         <output-file value="intersection.net.xml"/>
     </output>
+
+    <tls_building>
+        <tls.guess value="true"/>
+        <tls.join value="true"/>
+    </tls_building>
 
 </netconvertConfiguration>
 -->
@@ -27,20 +32,27 @@
         <lane id=":n1_1_0" index="0" speed="13.90" length="11.20" shape="204.00,201.60 192.80,201.60"/>
     </edge>
 
-    <edge id="east_in" from="n4" to="n1" priority="1">
+    <edge id="east_in" from="n4" to="n1" priority="-1">
         <lane id="east_in_0" index="0" speed="13.90" length="196.00" shape="400.00,201.60 204.00,201.60"/>
     </edge>
-    <edge id="north_in" from="n2" to="n1" priority="1">
+    <edge id="north_in" from="n2" to="n1" priority="-1">
         <lane id="north_in_0" index="0" speed="13.90" length="192.80" shape="198.40,400.00 198.40,207.20"/>
     </edge>
-    <edge id="south_out" from="n1" to="n3" priority="1">
+    <edge id="south_out" from="n1" to="n3" priority="-1">
         <lane id="south_out_0" index="0" speed="13.90" length="196.00" shape="198.40,196.00 198.40,0.00"/>
     </edge>
-    <edge id="west_out" from="n1" to="n5" priority="1">
+    <edge id="west_out" from="n1" to="n5" priority="-1">
         <lane id="west_out_0" index="0" speed="13.90" length="192.80" shape="192.80,201.60 0.00,201.60"/>
     </edge>
 
-    <junction id="n1" type="priority" x="200.00" y="200.00" incLanes="north_in_0 east_in_0" intLanes=":n1_0_0 :n1_1_0" shape="196.80,207.20 200.00,207.20 200.44,204.98 201.00,204.20 201.78,203.64 202.78,203.31 204.00,203.20 204.00,200.00 201.78,199.56 201.00,199.00 200.44,198.22 200.11,197.22 200.00,196.00 196.80,196.00 196.36,198.22 195.80,199.00 195.02,199.56 194.02,199.89 192.80,200.00 192.80,203.20 195.02,203.64 195.80,204.20 196.36,204.98 196.69,205.98">
+    <tlLogic id="n1" type="static" programID="0" offset="0">
+        <phase duration="42" state="Gr"/>
+        <phase duration="3"  state="yr"/>
+        <phase duration="42" state="rG"/>
+        <phase duration="3"  state="ry"/>
+    </tlLogic>
+
+    <junction id="n1" type="traffic_light" x="200.00" y="200.00" incLanes="north_in_0 east_in_0" intLanes=":n1_0_0 :n1_1_0" shape="196.80,207.20 200.00,207.20 200.44,204.98 201.00,204.20 201.78,203.64 202.78,203.31 204.00,203.20 204.00,200.00 201.78,199.56 201.00,199.00 200.44,198.22 200.11,197.22 200.00,196.00 196.80,196.00 196.36,198.22 195.80,199.00 195.02,199.56 194.02,199.89 192.80,200.00 192.80,203.20 195.02,203.64 195.80,204.20 196.36,204.98 196.69,205.98">
         <request index="0" response="00" foes="10" cont="0"/>
         <request index="1" response="01" foes="01" cont="0"/>
     </junction>
@@ -49,8 +61,8 @@
     <junction id="n4" type="dead_end" x="400.00" y="200.00" incLanes="" intLanes="" shape="400.00,200.00 400.00,203.20"/>
     <junction id="n5" type="dead_end" x="0.00" y="200.00" incLanes="west_out_0" intLanes="" shape="0.00,203.20 0.00,200.00"/>
 
-    <connection from="east_in" to="west_out" fromLane="0" toLane="0" via=":n1_1_0" dir="s" state="m"/>
-    <connection from="north_in" to="south_out" fromLane="0" toLane="0" via=":n1_0_0" dir="s" state="M"/>
+    <connection from="east_in" to="west_out" fromLane="0" toLane="0" via=":n1_1_0" tl="n1" linkIndex="1" dir="s" state="o"/>
+    <connection from="north_in" to="south_out" fromLane="0" toLane="0" via=":n1_0_0" tl="n1" linkIndex="0" dir="s" state="O"/>
 
     <connection from=":n1_0" to="south_out" fromLane="0" toLane="0" dir="s" state="M"/>
     <connection from=":n1_1" to="west_out" fromLane="0" toLane="0" dir="s" state="M"/>

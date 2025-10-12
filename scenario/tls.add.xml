@@ -1,8 +1,8 @@
 <additional>
   <tlLogic id="n1" type="static" programID="custom" offset="0">
-    <phase duration="90" state="GrGr"/>
-    <phase duration="15"  state="yryr"/>
-    <phase duration="90" state="rGrG"/>
-    <phase duration="15"  state="ryry"/>
+    <phase duration="30" state="Gr"/>
+    <phase duration="5"  state="yr"/>
+    <phase duration="30" state="rG"/>
+    <phase duration="5"  state="ry"/>
   </tlLogic>
 </additional>

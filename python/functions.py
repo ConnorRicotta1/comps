@@ -24,18 +24,20 @@ def get_controlled_vehicles():
         speed = traci.vehicle.getSpeed(veh_id)
         lane = traci.vehicle.getLaneID(veh_id)
         dist = ((pos[0] - INTERSECTION_POS[0])**2 + (pos[1] - INTERSECTION_POS[1])**2)**0.5
+        vehType = traci.vehicle.getTypeID(veh_id)
 
-        if lane == "north_in_0":
-            lane_length = traci.lane.getLength("north_in_0")
-            traci.vehicle.setStop(veh_id, edgeID="north_in", pos=lane_length - 0.1, duration=999.0)
-        if lane == "east_in_0":
-            # print(lane)
-            lane_length = traci.lane.getLength("east_in_0")
-            traci.vehicle.setStop(veh_id, edgeID="east_in", pos=lane_length - 0.1, duration=999.0)
+
+        # if lane == "north_in_0":
+        #     lane_length = traci.lane.getLength("north_in_0")
+        #     traci.vehicle.setStop(veh_id, edgeID="north_in", pos=lane_length - 0.1, duration=999.0)
+        # if lane == "east_in_0":
+        #     # print(lane)
+        #     lane_length = traci.lane.getLength("east_in_0")
+        #     traci.vehicle.setStop(veh_id, edgeID="east_in", pos=lane_length - 0.1, duration=999.0)
 
         #print(f"{veh_id}: dist={dist:.2f}, speed={speed:.2f}")  # Debug line
 
-        if (dist < CONTROL_RADIUS and (lane == "north_in_0" or lane == "east_in_0")):
+        if (dist < CONTROL_RADIUS and (lane == "north_in_0" or lane == "east_in_0") and vehType == "connected"):
             controlled.append((veh_id, speed, dist, lane))
         
 
@@ -120,13 +122,13 @@ def interleave_all(sequences):
         results.extend(interleave(first, r))
     return results
 
-def penalty(vehicle):
-    Pck = max(S/V, (-A*(1/Sm)*((vehicle[4] - 1)*5) + math.sqrt((A*(1/Sm)*(vehicle[4] - 1)*5)**2 + 2*A*S) / A))
+def penalty(Ock):
+    Pck = max(S/V, (-A*(1/Sm)*((Ock - 1)) + math.sqrt((A*(1/Sm)*(Ock - 1))**2 + 2*A*S) / A))
     return Pck
 
-def delayCost(vehicle, vehicle_index):
-    Pck = penalty(vehicle)
-    cost = max(vehicle[1], (vehicle_index - 1) + (1/Sm) + Pck)
+def delayCost(vehicle, vehicle_index, Ock):
+    Pck = penalty(Ock)
+    cost = max(vehicle[1], (vehicle_index - 1)*SLOT_DURATION + (1/Sm) + Pck)
     return cost
 
 def totalDelay(costs):
@@ -140,9 +142,29 @@ def processCombinations(combinations):
     for combo_index, combination in enumerate(combinations):
         #print(f"\n Combination {combo_index + 1}:")
         total_cost = 0
-
+        prevVeh = None
+        Ock = 0
+        SWc = 0
         for vehicle_index, vehicle in enumerate(combination):
             veh_id, eta, dist, lane, q_pos = vehicle
+
+            if prevVeh == None:
+                prevVeh = vehicle
+
+            if vehicle[3] == prevVeh[3]:
+                Ock += 1
+            else:
+                Ock = 1
+
+            if Ock == 1:
+                SWc +=1
+
+            print(f"    Ock: {Ock}")
+
+            if vehicle_index + 1 < len(combination):
+                if vehicle[3] == combination[vehicle_index + 1][3]:
+                    SWc -= 1
+
 
             # print(f"    Vehicle {vehicle_index + 1}:")
             # print(f"    ID: {veh_id}")
@@ -150,10 +172,10 @@ def processCombinations(combinations):
             # print(f"    Distance to junction: {dist}")
             # print(f"    Lane ID: {lane}")
             # print(f"    Lane Position: {q_pos}")
-            cost = delayCost(vehicle, vehicle_index)
+            cost = delayCost(vehicle, vehicle_index, Ock)
             # print(f"    cost: {cost}")
             total_cost = total_cost + cost
 
-        costIndex.append(total_cost)
+        costIndex.append(SWc)
     #print(f"    cost index: {costIndex}")
     return costIndex

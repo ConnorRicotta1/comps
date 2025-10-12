@@ -11,7 +11,7 @@ stop_counts = {}
 # Dictionary to track whether a vehicle was previously stopped
 was_stopped = {}
 
-traci.start(["sumo", "-c", "../scenario/intersection.sumocfg"])
+traci.start(["sumo-gui", "-c", "../scenario/intersection.sumocfg"])
 
 while traci.simulation.getMinExpectedNumber() > 0:
     
@@ -47,6 +47,7 @@ while traci.simulation.getMinExpectedNumber() > 0:
         feasible_orders = interleave_all(lane_sequences)
 
     #print(feasible_orders)
+    # print(traci.trafficlight.getControlledLanes("n1"))
 
     costIndex = []
     costIndex = processCombinations(feasible_orders)
@@ -60,7 +61,7 @@ while traci.simulation.getMinExpectedNumber() > 0:
 
         # print(traci.vehicle.__dict__)
         # print(traci.vehicle.getRoute(controlCombination[0][0]))
-        print(controlCombination)
+        # print(controlCombination)
 
         # platoon = []
         # control_lane = controlCombination[0][3]
@@ -97,18 +98,10 @@ while traci.simulation.getMinExpectedNumber() > 0:
 
         for i in range(len(controlCombination)):
             if controlCombination[i][3] == "east_in_0":
-                traci.vehicle.setRoute(controlCombination[i][0], ["east_in","west_out"])
-                traci.vehicle.setSpeed(controlCombination[i][0], -1)
-                traci.vehicle.setStop(controlCombination[i][0], edgeID="west_out", pos=190, duration=0)
-                if traci.vehicle.isStopped(controlCombination[i][0]):
-                    traci.vehicle.resume(controlCombination[i][0])
+                traci.trafficlight.setRedYellowGreenState("n1", "rG")
 
             elif controlCombination[i][3] == "north_in_0":
-                traci.vehicle.setRoute(controlCombination[i][0], ["north_in","south_out"])
-                traci.vehicle.setSpeed(controlCombination[i][0], -1)
-                traci.vehicle.setStop(controlCombination[i][0], edgeID="south_out", pos=190, duration=0)
-                if traci.vehicle.isStopped(controlCombination[i][0]):
-                    traci.vehicle.resume(controlCombination[i][0])
+                traci.trafficlight.setRedYellowGreenState("n1", "Gr")
                 # print(controlCombination[i])
 
             while min(traci.vehicle.getPosition(controlCombination[i][0])) > 195:
