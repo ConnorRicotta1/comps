@@ -12,9 +12,51 @@ V = 13.9 # assumed speed for crossing
 A = 2.6 #accel of vehicle 
 Sm = 750 # saturation flow
 
+vehicle_spacing = 6.0  # meters per vehicle
+default_speed = 13.89  # m/s (~50 km/h)
 
-def distance(pos1, pos2):
-    return math.sqrt((pos1[0] - pos2[0])**2 + (pos1[1] - pos2[1])**2)
+# Define vph for each lane
+vph_north = 900
+vph_east = 1200
+
+# Convert to arrival rate
+arrival_rate_north = vph_north / 3600
+arrival_rate_east = vph_east / 3600
+
+# Get traffic light state
+
+
+# Lane index mapping (adjust if needed)
+lane_indices = {
+    "north_in_0": 0,
+    "east_in_0": 1
+}
+
+def estimate_non_cvs(lane, arrival_rate, lane_index):
+    estimated = []
+    signal_state = traci.trafficlight.getRedYellowGreenState("n1")
+    phase_duration = traci.trafficlight.getPhaseDuration("n1")
+    if signal_state[lane_index] == 'r':
+        # RED phase: estimate queued vehicles
+        estimated_count = int(arrival_rate * phase_duration)
+        for i in range(estimated_count):
+            veh_id = f"nonCV_red_{lane}_{i}"
+            current_time = traci.simulation.getTime()
+            eta = current_time + i * 2  # staggered
+            dist = CONTROL_RADIUS - i * vehicle_spacing
+            q_pos = i + 1
+            estimated.append((veh_id, eta, dist, lane, q_pos))    
+    elif signal_state[lane_index] == 'G':
+        # GREEN phase: estimate oncoming vehicles
+        estimated_count = int(arrival_rate * phase_duration)
+        for i in range(estimated_count):
+            veh_id = f"nonCV_green_{lane}_{i}"
+            dist = CONTROL_RADIUS + i * vehicle_spacing
+            current_time = traci.simulation.getTime()
+            eta = current_time + dist / default_speed
+            q_pos = None 
+            estimated.append((veh_id, eta, dist, lane, q_pos))
+    return estimated
 
 
 def get_controlled_vehicles():
@@ -26,21 +68,11 @@ def get_controlled_vehicles():
         dist = ((pos[0] - INTERSECTION_POS[0])**2 + (pos[1] - INTERSECTION_POS[1])**2)**0.5
         vehType = traci.vehicle.getTypeID(veh_id)
 
-
-        # if lane == "north_in_0":
-        #     lane_length = traci.lane.getLength("north_in_0")
-        #     traci.vehicle.setStop(veh_id, edgeID="north_in", pos=lane_length - 0.1, duration=999.0)
-        # if lane == "east_in_0":
-        #     # print(lane)
-        #     lane_length = traci.lane.getLength("east_in_0")
-        #     traci.vehicle.setStop(veh_id, edgeID="east_in", pos=lane_length - 0.1, duration=999.0)
-
         #print(f"{veh_id}: dist={dist:.2f}, speed={speed:.2f}")  # Debug line
 
         if (dist < CONTROL_RADIUS and (lane == "north_in_0" or lane == "east_in_0") and vehType == "connected"):
             controlled.append((veh_id, speed, dist, lane))
         
-
     # Sort by distance to prioritize closest vehicles
     controlled.sort(key=lambda x: x[2])
 
@@ -69,7 +101,64 @@ def get_controlled_vehicles():
         eta = estimate_arrival_time(speed, dist, q_pos)
         scheduled.append((veh_id, eta, dist, lane, q_pos))
 
+    # if len(scheduled) == 0 and traci.simulation.getTime() > 3:
+    #     scheduled += estimate_non_cvs("north_in_0", arrival_rate_north, lane_indices["north_in_0"])
+    #     scheduled += estimate_non_cvs("east_in_0", arrival_rate_east, lane_indices["east_in_0"])
+
     scheduled.sort(key=lambda x: x[1])  # sort by ETA
+    # print(scheduled)
+
+    # penetration_rate = 0.3
+    # non_cv_ratio = (1 - penetration_rate) / penetration_rate
+    # non_cv_counter = 0
+
+    # lane_groups = defaultdict(list)
+    # for veh_id, eta, dist, lane, q_pos in scheduled:
+    #     lane_groups[lane].append((veh_id, eta, dist, q_pos))
+
+    # for lane, vehicles in lane_groups.items():
+    #     vehicles.sort(key=lambda x: x[3])  # sort by queue position
+
+    #     # 1. Ahead of first CV
+    #     first_pos = vehicles[0][3]
+    #     estimated_ahead = int((first_pos - 1) * non_cv_ratio)
+    #     for j in range(estimated_ahead):
+    #         non_cv_id = f"nonCV_{non_cv_counter}"
+    #         non_cv_counter += 1
+    #         est_q_pos = j + 1
+    #         est_dist = vehicles[0][2] + 6 * (first_pos - est_q_pos)  # assume 6m spacing
+    #         est_eta = vehicles[0][1] + 2 + j  # staggered buffer
+    #         scheduled.append((non_cv_id, est_eta, est_dist, lane, est_q_pos))
+
+    #     # 2. Between CVs
+    #     for i in range(len(vehicles) - 1):
+    #         curr_pos = vehicles[i][3]
+    #         next_pos = vehicles[i + 1][3]
+    #         gap = next_pos - curr_pos - 1
+    #         estimated_count = int(gap * non_cv_ratio)
+
+    #         for j in range(estimated_count):
+    #             non_cv_id = f"nonCV_{non_cv_counter}"
+    #             non_cv_counter += 1
+    #             est_q_pos = curr_pos + j + 1
+    #             est_dist = (vehicles[i][2] + vehicles[i + 1][2]) / 2
+    #             est_eta = (vehicles[i][1] + vehicles[i + 1][1]) / 2 + 2
+    #             scheduled.append((non_cv_id, est_eta, est_dist, lane, est_q_pos))
+
+    #     # 3. Behind last CV
+    #     last_pos = vehicles[-1][3]
+    #     estimated_behind = int(3 * non_cv_ratio)  # assume 3 trailing positions
+    #     for j in range(estimated_behind):
+    #         non_cv_id = f"nonCV_{non_cv_counter}"
+    #         non_cv_counter += 1
+    #         est_q_pos = last_pos + j + 1
+    #         est_dist = vehicles[-1][2] - 6 * (est_q_pos - last_pos)  # assume 6m spacing
+    #         est_eta = vehicles[-1][1] + 2 + j
+    #         scheduled.append((non_cv_id, est_eta, est_dist, lane, est_q_pos))
+
+        # scheduled.sort(key=lambda x: x[1])  # re-sort after adding non-CVs
+
+    # print(scheduled)
 
     return scheduled
 
@@ -123,7 +212,7 @@ def interleave_all(sequences):
     return results
 
 def penalty(Ock):
-    Pck = max(S/V, (-A*(1/Sm)*((Ock - 1)) + math.sqrt((A*(1/Sm)*(Ock - 1))**2 + 2*A*S) / A))
+    Pck = max(S/V, ((-A*(1/Sm)*((Ock - 1))) + math.sqrt((A*(1/Sm)*(Ock - 1)**2) + 2*A*S)) / A)
     return Pck
 
 def delayCost(vehicle, vehicle_index, Ock):
@@ -159,7 +248,7 @@ def processCombinations(combinations):
             if Ock == 1:
                 SWc +=1
 
-            print(f"    Ock: {Ock}")
+            # print(f"    Ock: {Ock}")
 
             if vehicle_index + 1 < len(combination):
                 if vehicle[3] == combination[vehicle_index + 1][3]:
@@ -176,6 +265,6 @@ def processCombinations(combinations):
             # print(f"    cost: {cost}")
             total_cost = total_cost + cost
 
-        costIndex.append(SWc)
+        costIndex.append(total_cost)
     #print(f"    cost index: {costIndex}")
     return costIndex

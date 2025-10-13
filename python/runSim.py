@@ -3,8 +3,10 @@ import xml.etree.ElementTree as ET
 
 from createRoute import createRoute
 from functions import *
+minGreen = 5
+timeStep = 0.5
 
-#createRoute()
+# createRoute()
 
 # Dictionary to track stops per vehicle
 stop_counts = {}
@@ -32,6 +34,8 @@ while traci.simulation.getMinExpectedNumber() > 0:
 
 
     scheduled = get_controlled_vehicles()
+
+    # print(len(scheduled))
     
 
     queued = getLaneQ(scheduled)
@@ -95,20 +99,30 @@ while traci.simulation.getMinExpectedNumber() > 0:
         #     traci.simulationStep()
         # print('made it!')
 
+        # print(controlCombination)
+        # for i in range(len(controlCombination)): 
+        #     if controlCombination[i][3] == "east_in_0":
+        #         traci.trafficlight.setRedYellowGreenState("n1", "rG")
 
-        for i in range(len(controlCombination)):
-            if controlCombination[i][3] == "east_in_0":
-                traci.trafficlight.setRedYellowGreenState("n1", "rG")
+        #     elif controlCombination[i][3] == "north_in_0":
+        #         traci.trafficlight.setRedYellowGreenState("n1", "Gr")
+        #         # print(controlCombination[i])
 
-            elif controlCombination[i][3] == "north_in_0":
-                traci.trafficlight.setRedYellowGreenState("n1", "Gr")
-                # print(controlCombination[i])
+        #     # green_start = traci.simulation.getTime()
+        #     # while traci.simulation.getTime() - green_start < minGreen:
+        #     #     traci.simulationStep()
 
-            while min(traci.vehicle.getPosition(controlCombination[i][0])) > 195:
-                if traci.vehicle.isStopped(controlCombination[i][0]):
-                    traci.vehicle.resume(controlCombination[i][0])
-                traci.simulationStep()
-            print('made it!')
+        #     try:
+        #         while min(traci.vehicle.getPosition(controlCombination[i][0])) > 195:
+        #             # if traci.vehicle.isStopped(controlCombination[i][0]):
+        #             #     traci.vehicle.resume(controlCombination[i][0])
+        #             traci.simulationStep()
+        #     # print('made it!')
+        #     except:
+        #         pass
+        # if len(controlCombination) < 1:
+        #     traci.trafficlight.setRedYellowGreenState("n1", "rG")
+
 
     traci.simulationStep()
 

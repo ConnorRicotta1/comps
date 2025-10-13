@@ -4,13 +4,8 @@
 	<vType id="connected" accel="2.6" decel="4.5" maxSpeed="13.9" length="5" />
 	<route id="rA" edges="north_in south_out" />
 	<route id="rB" edges="east_in west_out" />
-	<!-- <flow id="nc_flow_A" type="non_connected" route="rA" begin="0" end="900" vehsPerHour="500" randomDepart="true" />
-		<stop lane="north_in_0" endPos="190.0" duration="999"/> -->
-
-	<flow id="cv_flow_A" type="connected" route="rA" begin="0" end="900" vehsPerHour="1200" randomDepart="true" />
-
-	<!-- <flow id="nc_flow_B" type="non_connected" route="rB" begin="0" end="900" vehsPerHour="500" randomDepart="true" />
-		<stop lane="east_in_0" endPos="190.0" duration="999"/> -->
-	<flow id="cv_flow_B" type="connected" route="rB" begin="0" end="900" vehsPerHour="400" randomDepart="true" />
-
+	<!-- <flow id="nc_flow_A" type="non_connected" route="rA" begin="0" end="900" vehsPerHour="750" randomDepart="true" /> -->
+	<flow id="cv_flow_A" type="connected" route="rA" begin="0" end="900" vehsPerHour="800" randomDepart="true" />
+	<!-- <flow id="nc_flow_B" type="non_connected" route="rB" begin="0" end="900" vehsPerHour="250" randomDepart="true" /> -->
+	<flow id="cv_flow_B" type="connected" route="rB" begin="0" end="900" vehsPerHour="800" randomDepart="true" />
 </routes>

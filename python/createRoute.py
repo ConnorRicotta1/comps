@@ -2,19 +2,20 @@ import xml.etree.ElementTree as ET
 import xml.dom.minidom
 import os
 
+total_vehicles_per_hour = 2000
+penetration_rate_connected = 0.5  # 30% connected vehicles
+simulation_duration = 900  # seconds
 
-def createRoute():
-    total_vehicles_per_hour = 1500
-    penetration_rate_connected = 0.3  # 30% connected vehicles
-    simulation_duration = 900  # seconds
-
-    # Demand ratio between roads (e.g., 60% Road A, 40% Road B)
-    road_a_ratio = 0.25
-    road_b_ratio = 1 - road_a_ratio
+# Demand ratio between roads (e.g., 60% Road A, 40% Road B)
+road_a_ratio = 0.75
+road_b_ratio = 1 - road_a_ratio
 
     # Split total vehicles between roads
-    vehicles_a = int(total_vehicles_per_hour * road_a_ratio)
-    vehicles_b = total_vehicles_per_hour - vehicles_a
+vehicles_a = int(total_vehicles_per_hour * road_a_ratio)
+vehicles_b = total_vehicles_per_hour - vehicles_a
+
+
+def createRoute():
 
     # Split by vehicle type
     cv_a = int(vehicles_a * penetration_rate_connected)
