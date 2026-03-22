@@ -4,20 +4,22 @@ from itertools import permutations
 from collections import defaultdict
 
 INTERSECTION_POS = (200, 200)  # coordinates of the junction
-CONTROL_RADIUS = 100.0
-MAX_N = 8  # maximum number of vehicles to control
+CONTROL_RADIUS = 200.0
+MAX_N = 8 # maximum number of vehicles to control
 SLOT_DURATION = 2 
 S = 11.2 # junction length
 V = 13.9 # assumed speed for crossing
 A = 2.6 #accel of vehicle 
-Sm = 750 # saturation flow
+Sm_n = 1280 # saturation flow
+Sm_e = 320 # saturation flow
+
 
 vehicle_spacing = 6.0  # meters per vehicle
 default_speed = 13.89  # m/s (~50 km/h)
 
 # Define vph for each lane
 vph_north = 900
-vph_east = 1200
+vph_east = 900
 
 # Convert to arrival rate
 arrival_rate_north = vph_north / 3600
@@ -67,7 +69,8 @@ def get_controlled_vehicles():
         lane = traci.vehicle.getLaneID(veh_id)
         dist = ((pos[0] - INTERSECTION_POS[0])**2 + (pos[1] - INTERSECTION_POS[1])**2)**0.5
         vehType = traci.vehicle.getTypeID(veh_id)
-
+        loss =traci.vehicle.getTimeLoss(veh_id)
+        # print(loss)
         #print(f"{veh_id}: dist={dist:.2f}, speed={speed:.2f}")  # Debug line
 
         if (dist < CONTROL_RADIUS and (lane == "north_in_0" or lane == "east_in_0") and vehType == "connected"):
@@ -108,7 +111,7 @@ def get_controlled_vehicles():
     scheduled.sort(key=lambda x: x[1])  # sort by ETA
     # print(scheduled)
 
-    # penetration_rate = 0.3
+    # penetration_rate = 0.9
     # non_cv_ratio = (1 - penetration_rate) / penetration_rate
     # non_cv_counter = 0
 
@@ -156,7 +159,9 @@ def get_controlled_vehicles():
     #         est_eta = vehicles[-1][1] + 2 + j
     #         scheduled.append((non_cv_id, est_eta, est_dist, lane, est_q_pos))
 
-        # scheduled.sort(key=lambda x: x[1])  # re-sort after adding non-CVs
+    #     scheduled.sort(key=lambda x: x[1])  # re-sort after adding non-CVs
+
+    #     scheduled = scheduled[:MAX_N]
 
     # print(scheduled)
 
@@ -211,13 +216,23 @@ def interleave_all(sequences):
         results.extend(interleave(first, r))
     return results
 
-def penalty(Ock):
+def penalty(Ock, Sm):
     Pck = max(S/V, ((-A*(1/Sm)*((Ock - 1))) + math.sqrt((A*(1/Sm)*(Ock - 1)**2) + 2*A*S)) / A)
     return Pck
 
 def delayCost(vehicle, vehicle_index, Ock):
-    Pck = penalty(Ock)
-    cost = max(vehicle[1], (vehicle_index - 1)*SLOT_DURATION + (1/Sm) + Pck)
+
+    if vehicle[3] == "north_in_0":
+        Sm = Sm_n
+    else:
+        Sm = Sm_e
+
+    ideal_time = vehicle[2] / V 
+    estimated_time = vehicle[1] 
+    estimated_delay = estimated_time - ideal_time
+
+    Pck = penalty(Ock, Sm)
+    cost = max(vehicle[1], (vehicle_index - 1)*SLOT_DURATION + (1/Sm) + Pck - 3*estimated_delay)
     return cost
 
 def totalDelay(costs):
@@ -246,15 +261,15 @@ def processCombinations(combinations):
                 Ock = 1
 
             if Ock == 1:
-                SWc +=1
+                SWc += 1
 
             # print(f"    Ock: {Ock}")
 
-            if vehicle_index + 1 < len(combination):
-                if vehicle[3] == combination[vehicle_index + 1][3]:
-                    SWc -= 1
+            # if vehicle_index + 1 < len(combination):
+            #     if vehicle[3] == combination[vehicle_index + 1][3]:
+            #         SWc -= 1
 
-
+            print(SWc)
             # print(f"    Vehicle {vehicle_index + 1}:")
             # print(f"    ID: {veh_id}")
             # print(f"    ETA: {eta}")

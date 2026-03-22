@@ -3,11 +3,11 @@ import xml.dom.minidom
 import os
 
 total_vehicles_per_hour = 2000
-penetration_rate_connected = 0.5  # 30% connected vehicles
+penetration_rate_connected = 0.9  # 30% connected vehicles
 simulation_duration = 900  # seconds
 
 # Demand ratio between roads (e.g., 60% Road A, 40% Road B)
-road_a_ratio = 0.75
+road_a_ratio = 0.2
 road_b_ratio = 1 - road_a_ratio
 
     # Split total vehicles between roads
@@ -57,7 +57,7 @@ def createRoute():
 
     tree = ET.ElementTree(routes)
     ET.indent(tree, space="\t", level=0)
-    tree.write("/home/connor/ecocar/comps/scenario/routes.rou.xml", encoding="utf-8", xml_declaration=True)
+    tree.write("/home/connor/ecocar/comps/twoWay/routes.rou.xml", encoding="utf-8", xml_declaration=True)
 
 
 
