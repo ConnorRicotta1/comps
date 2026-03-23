@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <input>
+    <net-file value="intersection.net.xml"/>
+    <route-files value="routes.rou.xml"/>
+    <additional-files value="tls.add.xml"/>
+  </input>
+
+  <time>
+    <begin value="0"/>
+    <end value="900"/>
+    <step-length value="0.5" />
+  </time>
+
+  <random_number>
+    <seed value="-1"/>
+  </random_number>
+
+
+  <report>
+    <verbose value="true"/>
+    <no-step-log value="true"/>
+    <duration-log.statistics value="true"/>
+  </report>
+
+    <output>
+      <tripinfo-output value="tripinfo.xml"/>
+    </output>
+</configuration>
+

@@ -1,0 +1,8 @@
+<nodes>
+  <node id="n1" x="0" y="0" type="traffic_light"/> <!-- Intersection -->
+  <node id="n2" x="0" y="200"/> <!-- North -->
+  <node id="n3" x="0" y="-200"/> <!-- South -->
+  <node id="n4" x="200" y="0"/> <!-- East -->
+  <node id="n5" x="-200" y="0"/> <!-- West -->
+</nodes>
+
