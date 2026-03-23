@@ -5,13 +5,15 @@ from collections import defaultdict
 
 INTERSECTION_POS = (200, 200)  # coordinates of the junction
 CONTROL_RADIUS = 200.0
-MAX_N = 8 # maximum number of vehicles to control
+MAX_N = 10  # maximum number of vehicles to control
 SLOT_DURATION = 2 
 S = 11.2 # junction length
 V = 13.9 # assumed speed for crossing
 A = 2.6 #accel of vehicle 
 Sm_n = 1280 # saturation flow
 Sm_e = 320 # saturation flow
+Sm_s = 1280 # saturation flow
+Sm_w = 320 # saturation flow
 
 
 vehicle_spacing = 6.0  # meters per vehicle
@@ -73,7 +75,7 @@ def get_controlled_vehicles():
         # print(loss)
         #print(f"{veh_id}: dist={dist:.2f}, speed={speed:.2f}")  # Debug line
 
-        if (dist < CONTROL_RADIUS and (lane == "north_in_0" or lane == "east_in_0") and vehType == "connected"):
+        if (dist < CONTROL_RADIUS and (lane == "north_in_0" or lane == "east_in_0" or lane == "south_in_0" or lane == "west_in_0") and vehType == "connected"):
             controlled.append((veh_id, speed, dist, lane))
         
     # Sort by distance to prioritize closest vehicles
@@ -87,16 +89,26 @@ def get_controlled_vehicles():
 
     q_pos_n = 1
     q_pos_e = 1
+    q_pos_s = 1
+    q_pos_w = 1
 
     for i, (veh_id, speed, dist, lane) in enumerate(controlled):
         if lane ==  "north_in_0":
             q_pos = q_pos_n
             queued.append((veh_id, speed, dist, lane, q_pos))
             q_pos_n +=1
-        else:
+        elif lane ==  "east_in_0":
             q_pos = q_pos_e
             queued.append((veh_id, speed, dist, lane, q_pos))
             q_pos_e +=1
+        elif lane ==  "south_in_0":
+            q_pos = q_pos_s
+            queued.append((veh_id, speed, dist, lane, q_pos))
+            q_pos_s +=1
+        elif lane ==  "west_in_0":
+            q_pos = q_pos_w
+            queued.append((veh_id, speed, dist, lane, q_pos))
+            q_pos_w +=1
 
 
     for i, (veh_id, speed, dist, lane, q_pos) in enumerate(queued):
@@ -109,6 +121,10 @@ def get_controlled_vehicles():
     #     scheduled += estimate_non_cvs("east_in_0", arrival_rate_east, lane_indices["east_in_0"])
 
     scheduled.sort(key=lambda x: x[1])  # sort by ETA
+
+    #!!!!!! after sorting by eta, delete 1 of the vehicle in the same lane that have a similar eta to treat 
+    #them as the same vehicle (this should be the closest one so the slightly further is left)
+
     # print(scheduled)
 
     # penetration_rate = 0.9
@@ -224,8 +240,12 @@ def delayCost(vehicle, vehicle_index, Ock):
 
     if vehicle[3] == "north_in_0":
         Sm = Sm_n
-    else:
+    elif vehicle[3] == "east_in_0":
         Sm = Sm_e
+    elif vehicle[3] == "south_in_0":
+        Sm = Sm_s
+    elif vehicle[3] == "west_in_0":
+        Sm = Sm_w
 
     ideal_time = vehicle[2] / V 
     estimated_time = vehicle[1] 
@@ -233,6 +253,8 @@ def delayCost(vehicle, vehicle_index, Ock):
 
     Pck = penalty(Ock, Sm)
     cost = max(vehicle[1], (vehicle_index - 1)*SLOT_DURATION + (1/Sm) + Pck - 3*estimated_delay)
+
+    # print("cost")
     return cost
 
 def totalDelay(costs):
@@ -268,8 +290,8 @@ def processCombinations(combinations):
             # if vehicle_index + 1 < len(combination):
             #     if vehicle[3] == combination[vehicle_index + 1][3]:
             #         SWc -= 1
-
-            print(SWc)
+            # print("here!!")
+            # print(SWc)
             # print(f"    Vehicle {vehicle_index + 1}:")
             # print(f"    ID: {veh_id}")
             # print(f"    ETA: {eta}")
