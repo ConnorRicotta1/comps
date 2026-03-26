@@ -5,15 +5,17 @@ from collections import defaultdict
 
 INTERSECTION_POS = (200, 200)  # coordinates of the junction
 CONTROL_RADIUS = 200.0
-MAX_N = 10  # maximum number of vehicles to control
+MAX_N = 8  # maximum number of vehicles to control
 SLOT_DURATION = 2 
 S = 11.2 # junction length
 V = 13.9 # assumed speed for crossing
 A = 2.6 #accel of vehicle 
-Sm_n = 1280 # saturation flow
-Sm_e = 320 # saturation flow
-Sm_s = 1280 # saturation flow
-Sm_w = 320 # saturation flow
+Sm_n = 400 # saturation flow
+Sm_e = 1200 # saturation flow
+Sm_s = 400 # saturation flow
+Sm_w = 1200 # saturation flow
+
+distThresh = 1
 
 
 vehicle_spacing = 6.0  # meters per vehicle
@@ -82,7 +84,7 @@ def get_controlled_vehicles():
     controlled.sort(key=lambda x: x[2])
 
     # Limit the number of vehicles returned
-    controlled = controlled[:MAX_N]
+    controlled = controlled[:MAX_N + 4]
 
     scheduled = []
     queued = []
@@ -121,6 +123,11 @@ def get_controlled_vehicles():
     #     scheduled += estimate_non_cvs("east_in_0", arrival_rate_east, lane_indices["east_in_0"])
 
     scheduled.sort(key=lambda x: x[1])  # sort by ETA
+
+
+        
+
+
 
     #!!!!!! after sorting by eta, delete 1 of the vehicle in the same lane that have a similar eta to treat 
     #them as the same vehicle (this should be the closest one so the slightly further is left)
@@ -204,6 +211,115 @@ def getLaneQ(vehicles):
         lane_queues[lane].sort(key=lambda x: x[4])  # q_pos
 
     return lane_queues
+
+def deleteSimilar(laneQ):
+    
+    all_vehicles = []
+
+    if "north_in_0" in laneQ and "south_in_0" in laneQ:
+
+        i = 0
+        while i < len(laneQ['north_in_0']):
+            j = 0
+            while j < len(laneQ['south_in_0']):
+
+                dist_n = laneQ['north_in_0'][i][2]
+                dist_s = laneQ['south_in_0'][j][2]
+
+                if abs(dist_n - dist_s) <= distThresh:
+
+                    if dist_n > dist_s:
+                        # print(laneQ)
+                        # print("north is further!!!!!!")
+
+                        # remove south vehicle
+                        laneQ['south_in_0'].pop(j)
+
+                        # adjust q_pos for south lane
+                        for k in range(j, len(laneQ['south_in_0'])):
+                            veh_id, eta, dist, lane, q_pos = laneQ['south_in_0'][k]
+                            laneQ['south_in_0'][k] = (veh_id, eta, dist, lane, q_pos - 1)
+                        # print(laneQ)
+
+                        # do NOT increment j here because list shrank
+                        continue
+
+                    else:
+                        # print(laneQ)
+                        # print("south is further!!!!!!")
+
+                        # remove north vehicle
+                        laneQ['north_in_0'].pop(i)
+
+                        # adjust q_pos for south lane
+                        for k in range(i, len(laneQ['north_in_0'])):
+                            veh_id, eta, dist, lane, q_pos = laneQ['north_in_0'][k]
+                            laneQ['north_in_0'][k] = (veh_id, eta, dist, lane, q_pos - 1)
+                        # print(laneQ)
+                        break
+
+                j += 1
+            i += 1
+    
+
+
+    if "west_in_0" in laneQ and "east_in_0" in laneQ:
+
+        i = 0
+        while i < len(laneQ['west_in_0']):
+            j = 0
+            while j < len(laneQ['east_in_0']):
+
+                dist_n = laneQ['west_in_0'][i][2]
+                dist_s = laneQ['east_in_0'][j][2]
+
+                if abs(dist_n - dist_s) <= distThresh:
+
+                    if dist_n > dist_s:
+                        # print(laneQ)
+                        # print("west is further!!!!!!")
+
+                        # remove east vehicle
+                        laneQ['east_in_0'].pop(j)
+
+                        # adjust q_pos for east lane
+                        for k in range(j, len(laneQ['east_in_0'])):
+                            veh_id, eta, dist, lane, q_pos = laneQ['east_in_0'][k]
+                            laneQ['east_in_0'][k] = (veh_id, eta, dist, lane, q_pos - 1)
+                        # print(laneQ)
+
+                        # do NOT increment j here because list shrank
+                        continue
+
+                    else:
+                        # print(laneQ)
+                        # print("east is further!!!!!!")
+
+                        # remove west vehicle
+                        laneQ['west_in_0'].pop(i)
+
+                        # adjust q_pos for east lane
+                        for k in range(i, len(laneQ['west_in_0'])):
+                            veh_id, eta, dist, lane, q_pos = laneQ['west_in_0'][k]
+                            laneQ['west_in_0'][k] = (veh_id, eta, dist, lane, q_pos - 1)
+                        # print(laneQ)
+                        break
+
+                j += 1
+            i += 1
+
+    for lane_id in ("north_in_0", "south_in_0", "west_in_0", "east_in_0"):
+        if lane_id in laneQ:
+            all_vehicles.extend(laneQ[lane_id])
+    # print(all_vehicles)
+    all_vehicles.sort(key=lambda x: x[1])
+    all_vehicles = all_vehicles[:MAX_N]
+
+    finalQ = getLaneQ(all_vehicles)
+
+
+    return finalQ
+
 
 
 def interleave(seq1, seq2):

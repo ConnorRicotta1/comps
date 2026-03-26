@@ -7,9 +7,10 @@ from createRoute import createRoute
 from functions import *
 from statistics import mean
 
-minGreen = 25
+
+minGreen = 2
 timeStep = 0.5
-iterations = 100
+iterations = 5
 
 # createRoute()
 
@@ -31,10 +32,13 @@ for i in range(iterations):
     stop_counts = {}
     # Dictionary to track whether a vehicle was previously stopped
     was_stopped = {}
+    # , "--end", "900"
 
     traci.start(["sumo", "-c", "../twoWay/intersection.sumocfg", "--seed", "-1", "--random"])
 
-    while traci.simulation.getMinExpectedNumber() > 0:
+    END = 700
+
+    while traci.simulation.getTime() < END:
         
         for veh_id in traci.vehicle.getIDList():
             speed = traci.vehicle.getSpeed(veh_id)
@@ -54,9 +58,13 @@ for i in range(iterations):
         scheduled = get_controlled_vehicles()
 
         # print(len(scheduled))
-        queued = getLaneQ(scheduled)
+        firstQueued = getLaneQ(scheduled)
 
-        lane_sequences = list(queued.values())  # list of lane-wise vehicle lists
+        # queued = deleteSimilar(firstQueued)
+
+        # print(scheduled)
+
+        lane_sequences = list(firstQueued.values())  # list of lane-wise vehicle lists
         if not lane_sequences:
             feasible_orders = []
         elif len(lane_sequences) == 1:
@@ -79,7 +87,7 @@ for i in range(iterations):
             lane_length = traci.lane.getLength(controlCombination[0][3])
 
             
-            # # print(controlCombination)
+            # print(controlCombination)
             for i in range(len(controlCombination)): 
                 if controlCombination[i][3] == "east_in_0" or controlCombination[i][3] == "west_in_0":
                     traci.trafficlight.setRedYellowGreenState("n1", "rGrG")
@@ -88,9 +96,9 @@ for i in range(iterations):
                     traci.trafficlight.setRedYellowGreenState("n1", "GrGr")
                     # print(controlCombination[i])
                 # print("here?")
-                # green_start = traci.simulation.getTime()
-                # while traci.simulation.getTime() - green_start < minGreen:
-                #     traci.simulationStep()
+                green_start = traci.simulation.getTime()
+                while traci.simulation.getTime() - green_start < minGreen:
+                    traci.simulationStep()
 
                 try:
                     while min(traci.vehicle.getPosition(controlCombination[i][0])) > 195:
@@ -166,7 +174,7 @@ for key in avgStats[0].keys():
     values = [run[key] for run in avgStats]
     averaged[key] = mean(values)
 
-print(avgStats)
+# print(avgStats)
 print(averaged)
 print(len(avgStats))
 
